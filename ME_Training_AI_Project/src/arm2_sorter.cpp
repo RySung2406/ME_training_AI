@@ -9,7 +9,7 @@
 //
 //  Board : Arduino Mega 2560 + Dobot Magician on Serial1 @ 115200
 //          HuskyLens on I2C (pin 20 SDA / 21 SCL)
-//          Conveyor 2 stepper on the STEP/DIR/EN pins below
+//          Conveyor 2 stepper via SN754410NE H-bridge
 //  Place : between Conveyor 1 and Conveyor 2, next to the RED area.
 //  Job   : a cube is delivered (already stopped) at the detection point by
 //          Conveyor 1. Read its colour, then
@@ -18,10 +18,11 @@
 //                               point, and stop.
 // ============================================================================
 
-const uint8_t PIN_PUMP      = 7;   // suction-cup air-pump relay
-const uint8_t PIN_BELT_STEP = 2;   // Conveyor 2 driver STEP
-const uint8_t PIN_BELT_DIR  = 3;   // Conveyor 2 driver DIR
-const uint8_t PIN_BELT_EN   = 4;   // Conveyor 2 driver EN (active LOW)
+const uint8_t PIN_PUMP = 7;   // suction-cup air-pump relay
+const uint8_t PIN_1A  = 2;   // SN754410NE input 1A (coil A+)
+const uint8_t PIN_2A  = 3;   // SN754410NE input 2A (coil A-)
+const uint8_t PIN_3A  = 4;   // SN754410NE input 3A (coil B+)
+const uint8_t PIN_4A  = 8;   // SN754410NE input 4A (coil B-)
 
 // HuskyLens learned colour IDs (train in Colour Recognition mode).
 const int ID_RED = 1, ID_GREEN = 2, ID_BLUE = 3, ID_YELLOW = 4;
@@ -93,6 +94,7 @@ void deliverOnConveyor2() {
   goTo(BELT2_X, BELT2_Y, BELT2_Z + LIFT_HEIGHT, BELT2_R);
   delay(MOVE_DELAY);
   belt2.advance(BELT2_TRAVEL_STEPS);
+  belt2.stop();   // de-energise coils
 
   goTo(HOME_X, HOME_Y, HOME_Z, HOME_R);
   delay(MOVE_DELAY);
@@ -111,7 +113,7 @@ void setup() {
     delay(1000);
   }
 
-  belt2.begin(PIN_BELT_STEP, PIN_BELT_DIR, PIN_BELT_EN, true);
+  belt2.begin(PIN_1A, PIN_2A, PIN_3A, PIN_4A, true);
 
   dobotInit();
   goTo(HOME_X, HOME_Y, HOME_Z, HOME_R);

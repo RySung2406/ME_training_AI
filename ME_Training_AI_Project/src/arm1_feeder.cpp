@@ -7,19 +7,20 @@
 //  ARM 1 - FEEDER + CONVEYOR 1     (build env: arm1_feeder)
 //
 //  Board : Arduino Mega 2560 + Dobot Magician on Serial1 @ 115200
-//          Conveyor 1 stepper on the STEP/DIR/EN pins below
+//          Conveyor 1 stepper via SN754410NE H-bridge
 //          HC-SR04 ultrasonic sensor aimed at the start point
 //  Job   : when the ultrasonic sensor detects a cube at the start point, pick
 //          it, drop it onto Conveyor 1, then run the belt until the cube
 //          reaches Arm 2's detection point and stop.
 // ============================================================================
 
-const uint8_t PIN_PUMP      = 7;   // suction-cup air-pump relay (external 3.5 V)
-const uint8_t PIN_BELT_STEP = 2;   // Conveyor 1 driver STEP
-const uint8_t PIN_BELT_DIR  = 3;   // Conveyor 1 driver DIR
-const uint8_t PIN_BELT_EN   = 4;   // Conveyor 1 driver EN (active LOW)
-const uint8_t PIN_TRIG      = 5;   // HC-SR04 trigger
-const uint8_t PIN_ECHO      = 6;   // HC-SR04 echo
+const uint8_t PIN_PUMP = 7;   // suction-cup air-pump relay (external 3.5 V)
+const uint8_t PIN_1A  = 2;   // SN754410NE input 1A (coil A+)
+const uint8_t PIN_2A  = 3;   // SN754410NE input 2A (coil A-)
+const uint8_t PIN_3A  = 4;   // SN754410NE input 3A (coil B+)
+const uint8_t PIN_4A  = 8;   // SN754410NE input 4A (coil B-)
+const uint8_t PIN_TRIG = 5;  // HC-SR04 trigger
+const uint8_t PIN_ECHO = 6;  // HC-SR04 echo
 
 // A cube is "present" at the start point when the ultrasonic reads closer than
 // this. *** CALIBRATE ***: compare the empty distance with the with-cube
@@ -82,6 +83,7 @@ void feedOneCube() {
   // Start the belt the moment the cube is placed; stop once it has travelled
   // to Arm 2's detection point.
   belt1.advance(BELT1_TRAVEL_STEPS);
+  belt1.stop();   // de-energise coils
 
   // Back to ready pose.
   goTo(HOME_X, HOME_Y, HOME_Z, HOME_R);
@@ -95,7 +97,7 @@ void setup() {
   pinMode(PIN_PUMP, OUTPUT);
   digitalWrite(PIN_PUMP, LOW);
 
-  belt1.begin(PIN_BELT_STEP, PIN_BELT_DIR, PIN_BELT_EN, true);
+  belt1.begin(PIN_1A, PIN_2A, PIN_3A, PIN_4A, true);
   startSensor.begin(PIN_TRIG, PIN_ECHO);
 
   dobotInit();
